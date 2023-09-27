@@ -96,7 +96,7 @@ export const usersRoutes = ()  => {
 
 
     /* Ruta protegida por token (verifyToken) y con control de roles (el usuario debe tener rol de admin para acceder al endpoint  */
-    
+
     router.get('/protected_adm', verifyToken, checkRoles(['admin']), (req, res) => {
         res.status(200).send({ status: 'OK', data: 'Se muestran los datos protegidos ADMIN' })
     })
@@ -106,18 +106,10 @@ export const usersRoutes = ()  => {
         // Ante todo chequeamos el validationResult del express-validator
         if (validationResult(req).isEmpty()) {
             try {
-                // req es un parámetro inyectado por Express que contiene toda la información
-                // relacionada a la solicitud (request)
-                // res por su lado contiene todo lo relativo a la respuesta (response)
-                
-                // req.body permite acceder a los datos de usuario que se desea cargar, por supuesto
-                // al "armar" el body del otro lado (en un formulario, postman, thunderclient, etc),
-                // se deben especificar esos campos (name, email, password en este ejemplo)
-                // por supuesto aquí falta un paso FUNDAMENTAL, que es la verificación de los datos
                 const { name, email, password } = req.body
-                                // Aquí agregamos el hasheo de clave, ya que nunca debemos almacenar una clave "plana"
+
                 const newUser = { name: name, email: email, password: createHash(password) }
-                // Una vez organizado el nuevo usuario, invocamos el método create() para enviarlo a la base de datos
+               
                 const process = await userModel.create(newUser)
                 
                 res.status(200).send({ status: 'OK', data: filterData(process, ['password']) })
