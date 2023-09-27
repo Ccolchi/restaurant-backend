@@ -10,10 +10,6 @@ import jwt from 'jsonwebtoken'
 export const usersRoutes = ()  => {
     const router = Router()
 
-    // Un middleware es una función que se "inyecta" en la cadena de ejecución de Express y hace uso de req, res y next.
-    // Si aparece un problema en el proceso, "corta" la ejecución de la cadena con un return y el error correspondiente;
-    // si todo se procesa ok, llama a next() para que Express continúe con el próximo "eslabón"
-
     /**
      * Verifica si el email enviado en el body ya se encuentra registrado
      */
@@ -31,10 +27,7 @@ export const usersRoutes = ()  => {
      * Verifica que el mail enviado en el body exista en la colección de usuarios
      */
     const checkReadyLogin = async (req, res, next) => {
-        // res.local es un elemento ya disponible en el objeto res de Express
-        // foundUser es un elemento nuevo de res.local que agregamos de nuestro lado
-        // para almacenar el usuario recuperado y poder usarlo luego en el endpoint
-        // Otra práctica común es agregar los datos en un nuevo objeto req.user
+
         res.locals.foundUser = await userModel.findOne({ email: req.body.email })
         
         if (res.locals.foundUser !== null) {
@@ -72,10 +65,6 @@ export const usersRoutes = ()  => {
 
     router.get('/paginated', async (req, res) => {
         try {
-            // El método paginate() está disponible gracias al uso del módulo mongoose-paginate-v2
-            // (ver user.mode.js para su habilitación). Mínimamente utilizaremos un offset y un limit
-            // para indicar desde dónde comenzar a recuperar registros y cuántos
-            // Podemos pasar un offset, por ej /api/users/paginated?offset=15
             const users = await userModel.paginate({}, { offset: req.query.offset || 0, limit: process.env.REQ_LIMIT || 50 })
             
             res.status(200).send({ status: 'OK', data: users })
@@ -84,12 +73,7 @@ export const usersRoutes = ()  => {
         }
     })
 
-    /**
-     * Habilitamos también una ruta para recuperar datos de un único usuario mediante su _id
-     * Express utiliza : en la url para indicar que el texto siguiente es el nombre de una variable (uid en este caso).
-     * Para usar internamente su valor, lo accedemos mediante req.params.nombre_variable (req.params.uid)
-     * Podemos utilizar más variables en la url, simplemente separándolas con barras /
-     */
+
     router.get('/search_user/:uid', async (req, res) => {
         try {
             // Importante siempre verificar los datos recibidos en request
@@ -110,28 +94,14 @@ export const usersRoutes = ()  => {
         }
     })
 
-    /**
-     * Esta es una ruta protegida por token (verifyToken)
-     */
-    router.get('/protected', verifyToken, (req, res) => {
-        res.status(200).send({ status: 'OK', data: 'Se muestran los datos protegidos USER' })
-    })
 
-    /**
-     * Esta es una ruta protegida por token (verifyToken) y con control de roles (checkRoles)
-     * En este caso el usuario debe tener rol de admin para poder obtener los datos del endpoint
-     */
+    /* Ruta protegida por token (verifyToken) y con control de roles (el usuario debe tener rol de admin para acceder al endpoint  */
+    
     router.get('/protected_adm', verifyToken, checkRoles(['admin']), (req, res) => {
         res.status(200).send({ status: 'OK', data: 'Se muestran los datos protegidos ADMIN' })
     })
 
-    /**
-     * Observar como estamos "inyectando" los middleware definidos arriba
-     * De esta forma, al recibirse una solicitud en este endpoint, se ejecutará primero el "eslabón"
-     * checkRequired, si todo está ok se continuará con validateCreateFields y luego checkRegistered.
-     * En caso de algún problema en uno de los eslabones, la cadena se "cortará" ahí directamente,
-     * devolviéndose el error que se indique en el propio middleware
-     */
+
     router.post('/register', checkRequired(['name', 'email', 'password']), validateCreateFields, checkRegistered, async (req, res) => {
         // Ante todo chequeamos el validationResult del express-validator
         if (validationResult(req).isEmpty()) {
@@ -159,10 +129,7 @@ export const usersRoutes = ()  => {
         }
     })
 
-    /**
-     * Login de usuario, verificando que el body envíe los campos email y password, validando su contenido
-     * y chequeando además que el mail indicado ya exista en la colección.
-     */
+
     router.post('/login', checkRequired(['email', 'password']), validateLoginFields, checkReadyLogin, async (req, res) => {
         // Ante todo chequeamos el validationResult del express-validator
         if (validationResult(req).isEmpty()) {
@@ -190,10 +157,7 @@ export const usersRoutes = ()  => {
         }
     })
 
-    /**
-     * Modificación de usuario, verificando formato de ID y campos permitidos.
-     * Si el body contiene otros elementos, se los filtra (filterAllowed).
-     */
+
     router.put('/update_user/:uid', verifyToken, checkRoles(['admin']), filterAllowed(['name', 'email', 'avatar', 'role', 'cart']), async (req, res) => {
         try {
             const id = req.params.uid
@@ -214,11 +178,6 @@ export const usersRoutes = ()  => {
         }
     })
 
-    /**
-     * Actualiza el carrito del usuario autenticado
-     * Directamente se utiliza el _id guardado en el payload del token, para evitar que se pueda modificar
-     * el carrito de otro usuario.
-     */
     router.put('/cart/add', verifyToken, filterAllowed(['cart']), async (req, res) => {
         try {
             const userToModify = await userModel.findOneAndUpdate({ _id: req.loggedInUser.uid }, { $set: req.filteredBody }, { new: true })
@@ -228,10 +187,7 @@ export const usersRoutes = ()  => {
         }
     })
 
-    /**
-     * Borrado definitivo de usuario, con verificación de formato de ID.
-     * En este caso el usuario debe tener rol de admin para que el endpoint procese el borrado.
-     */
+
     router.delete('/delete_user/:uid', verifyToken, checkRoles(['admin']), async (req, res) => {
         try {
             const id = req.params.uid
