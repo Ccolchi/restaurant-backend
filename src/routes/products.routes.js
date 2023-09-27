@@ -26,7 +26,7 @@ export const productsRoutes = ()  => {
     })
 
     router.get('/dishes', async (req, res) => {
-        res.status(200).send({ status: 'OK', data: probadita })
+        res.status(200).send({ status: 'OK', data: products })
     })
 
 
