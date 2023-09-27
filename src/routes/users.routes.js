@@ -76,8 +76,7 @@ export const usersRoutes = ()  => {
 
     router.get('/search_user/:uid', async (req, res) => {
         try {
-            // Importante siempre verificar los datos recibidos en request
-            // En este caso estamos al menos controlando que el id enviado tenga un formato válido de MongoDB
+            // verificando que el id enviado tenga un formato válido de MongoDB
             if (mongoose.Types.ObjectId.isValid(req.params.uid)) {
                 const user = await userModel.findById(req.params.uid)
 
