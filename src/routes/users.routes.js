@@ -132,7 +132,7 @@ export const usersRoutes = ()  => {
      * En caso de algún problema en uno de los eslabones, la cadena se "cortará" ahí directamente,
      * devolviéndose el error que se indique en el propio middleware
      */
-    router.post('/register_user', checkRequired(['name', 'email', 'password']), validateCreateFields, checkRegistered, async (req, res) => {
+    router.post('/register', checkRequired(['name', 'email', 'password']), validateCreateFields, checkRegistered, async (req, res) => {
         // Ante todo chequeamos el validationResult del express-validator
         if (validationResult(req).isEmpty()) {
             try {
